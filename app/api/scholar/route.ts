@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import axios from "axios";
-import * as cheerio from "cheerio";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -13,55 +12,46 @@ export async function GET(request: Request) {
     );
   }
 
-  try {
-    // Fetch Google Scholar profile page
-    const url = `https://scholar.google.com/citations?user=${scholarId}&hl=en`;
-    const response = await axios.get(url, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+  const serpApiKey = process.env.SERPAPI_KEY;
+
+  if (!serpApiKey) {
+    return NextResponse.json(
+      { 
+        error: "SerpAPI key not configured",
+        note: "Please add SERPAPI_KEY to your environment variables"
       },
-    });
+      { status: 500 }
+    );
+  }
 
-    const $ = cheerio.load(response.data);
-    const publications: any[] = [];
+  try {
+    // Use SerpAPI to fetch Google Scholar author data
+    const serpApiUrl = `https://serpapi.com/search.json`;
+    const params = {
+      engine: "google_scholar_author",
+      author_id: scholarId,
+      api_key: serpApiKey,
+      num: 5, // Get top 5 publications
+    };
 
-    // Parse publications from the page
-    $(".gsc_a_tr").each((index, element) => {
-      const title = $(element).find(".gsc_a_at").text().trim();
-      const link =
-        "https://scholar.google.com" +
-        $(element).find(".gsc_a_at").attr("href");
-      const authors = $(element).find(".gsc_a_at").next().text().trim();
-      const venue = $(element).find(".gs_gray").last().text().trim();
-      const year = $(element).find(".gsc_a_y span").text().trim();
-      const citations = $(element)
-        .find(".gsc_a_c a")
-        .text()
-        .trim();
+    const response = await axios.get(serpApiUrl, { params });
+    const data = response.data;
 
-      if (title) {
-        publications.push({
-          title,
-          authors,
-          venue,
-          year,
-          citations: citations || "0",
-          link,
-        });
-      }
-    });
+    // Extract publications
+    const publications = (data.articles || []).map((article: any) => ({
+      title: article.title || "",
+      authors: article.authors || "",
+      venue: article.publication || "",
+      year: article.year || "",
+      citations: article.cited_by?.value?.toString() || "0",
+      link: article.link || `https://scholar.google.com/citations?user=${scholarId}`,
+    }));
 
-    // Get citation stats
+    // Extract citation stats
     const stats = {
-      totalCitations: $("#gsc_rsb_st tbody tr")
-        .first()
-        .find("td")
-        .eq(1)
-        .text()
-        .trim(),
-      hIndex: $("#gsc_rsb_st tbody tr").eq(1).find("td").eq(1).text().trim(),
-      i10Index: $("#gsc_rsb_st tbody tr").eq(2).find("td").eq(1).text().trim(),
+      totalCitations: data.cited_by?.table?.[0]?.citations?.all?.toString() || "0",
+      hIndex: data.cited_by?.table?.[1]?.h_index?.all?.toString() || "0",
+      i10Index: data.cited_by?.table?.[2]?.i10_index?.all?.toString() || "0",
     };
 
     return NextResponse.json({
@@ -69,12 +59,16 @@ export async function GET(request: Request) {
       stats,
     });
   } catch (error: any) {
-    console.error("Google Scholar API Error:", error.message);
+    console.error("SerpAPI Error:", error.message);
+    
+    // Provide helpful error message
+    const errorMessage = error.response?.data?.error || error.message;
+    
     return NextResponse.json(
       {
         error: "Failed to fetch publications",
-        details: error.message,
-        note: "Google Scholar may be blocking automated requests. Consider using a proxy or API service.",
+        details: errorMessage,
+        note: "Check your SerpAPI key and quota. Free tier: 100 searches/month.",
       },
       { status: 500 }
     );

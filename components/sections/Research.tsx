@@ -41,6 +41,16 @@ export default function Research() {
 
         const response = await fetch(`/api/scholar?scholarId=${scholarId}`);
         if (!response.ok) {
+          // Use manual fallback data if API fails
+          if (config.publications && config.publications.length > 0) {
+            setPublications(config.publications);
+            if (config.citationStats && Object.keys(config.citationStats).length > 0) {
+              setStats(config.citationStats as ScholarStats);
+            }
+            setLoading(false);
+            return;
+          }
+          
           const errorData = await response.json();
           throw new Error(errorData.note || "Failed to fetch publications");
         }
@@ -49,7 +59,15 @@ export default function Research() {
         setPublications(data.publications.slice(0, 5)); // Show top 5 publications
         setStats(data.stats);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "An error occurred");
+        // Try manual fallback data on error
+        if (config.publications && config.publications.length > 0) {
+          setPublications(config.publications);
+          if (config.citationStats && Object.keys(config.citationStats).length > 0) {
+            setStats(config.citationStats as ScholarStats);
+          }
+        } else {
+          setError(err instanceof Error ? err.message : "An error occurred");
+        }
       } finally {
         setLoading(false);
       }
@@ -98,15 +116,44 @@ export default function Research() {
         )}
 
         {error && (
-          <div className="text-center text-muted-foreground py-12">
-            <p>Failed to load publications: {error}</p>
-            <p className="text-sm mt-2">
-              Please configure your Google Scholar ID in the config file.
-            </p>
-            <p className="text-xs mt-1">
-              Note: Google Scholar may block automated requests. Consider using a proxy or API service.
-            </p>
-          </div>
+          <Card className="max-w-2xl mx-auto bg-card/80 backdrop-blur border-2 border-yellow-500/50">
+            <CardContent className="pt-6">
+              <div className="text-center space-y-4">
+                <div className="flex justify-center">
+                  <div className="p-3 bg-yellow-500/10 rounded-full">
+                    <FileText className="h-8 w-8 text-yellow-500" />
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">Unable to Load Publications</h3>
+                  <p className="text-muted-foreground mb-3">{error}</p>
+                  <div className="text-sm text-muted-foreground space-y-2 bg-muted/50 p-4 rounded-lg text-left">
+                    <p className="font-semibold">Quick Fix Options:</p>
+                    <ol className="list-decimal list-inside space-y-1 ml-2">
+                      <li>Add publications manually in <code className="bg-background px-1.5 py-0.5 rounded">config/site-config.ts</code></li>
+                      <li>Use a proxy service for Google Scholar</li>
+                      <li>Wait and try again (rate limiting may be temporary)</li>
+                    </ol>
+                  </div>
+                </div>
+                {config.personal.social.googleScholar && (
+                  <a
+                    href={`https://scholar.google.com/citations?user=${config.personal.social.googleScholar}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Button 
+                      variant="outline" 
+                      className="mt-4"
+                    >
+                      View on Google Scholar Directly
+                      <ExternalLink className="ml-2 h-4 w-4" />
+                    </Button>
+                  </a>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {!loading && !error && (

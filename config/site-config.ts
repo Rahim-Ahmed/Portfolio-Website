@@ -101,4 +101,24 @@ export const config = {
     tools: ["Arduino", "Microcontrollers", "Git", "Linux", "Windows", "Docker", "Kubernetes",],
     other: ["Machine Learning", "Deep Learning", "Computer Vision", "Natural Language Processing", "Data Science", "Web Development", "Problem Solving"],
   },
+
+  // Manual publications (fallback if Google Scholar API fails)
+  // Uncomment and fill in your publications if Scholar scraping is blocked
+  publications: [
+    // {
+    //   title: "Your Paper Title",
+    //   authors: "Author 1, Author 2, Author 3",
+    //   venue: "Conference/Journal Name",
+    //   year: "2024",
+    //   citations: "10",
+    //   link: "https://scholar.google.com/citations?view_op=view_citation&citation_for_view=..."
+    // },
+  ],
+  
+  // Citation stats (fallback if Google Scholar API fails)
+  citationStats: {
+    // totalCitations: "50",
+    // hIndex: "3",
+    // i10Index: "2"
+  },
 };
