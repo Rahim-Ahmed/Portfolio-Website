@@ -42,7 +42,7 @@ export default function Hero() {
         <div className="text-center md:text-left space-y-8 flex-1">
           <div className="space-y-4">
             <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
-              Hi, I'm{" "}
+              Assalamu Alaikum, I'm{" "}
               <span className="text-primary inline-block">
                 {isMounted ? displayedText : config.personal.name}
                 {isMounted && <span className="animate-pulse">|</span>}

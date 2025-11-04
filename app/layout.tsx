@@ -8,8 +8,8 @@ import Footer from "@/components/Footer";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Portfolio - Ab Rahim Ahmed Sowrov",
-  description: "Graduate Student & Researcher in Computer Science specializing in Machine Learning, Deep Learning, and Web Development",
+  title: "Portfolio - Ab. Rahim",
+  description: "Personal portfolio showcasing projects, research, and experience",
 };
 
 export default function RootLayout({
@@ -22,7 +22,7 @@ export default function RootLayout({
       <body className={inter.className}>
         <ThemeProvider
           attribute="class"
-          defaultTheme="light"
+          defaultTheme="dark"
           enableSystem
           disableTransitionOnChange
         >
